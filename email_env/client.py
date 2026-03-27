@@ -5,16 +5,17 @@ class EmailEnv:
     def __init__(self):
         self.tasks = {
             "easy": [
-                ("I want a refund", "refund"),
-                ("Help me with my account", "support"),
+                 ("I want a refund for my order #1234", "refund"),
+                 ("Can you help me reset my password?", "support"),
             ],
             "medium": [
-                ("I need refund but also help", "refund"),
-                ("My order is broken, what to do?", "support"),
+                ("I want a refund but also need help logging in", "refund"),
+                ("My product arrived damaged and I need assistance", "support"),
             ],
             "hard": [
-                ("This is frustrating, fix this now!", "support"),
-                ("I am unhappy with the service", "support"),
+                ("This is extremely frustrating, I’ve emailed 3 times already!", "support"),
+                ("I am disappointed and may cancel my subscription", "support"),
+
             ]
         }
 
@@ -58,3 +59,17 @@ class EmailEnv:
             "email": self.current_email,
             "task": self.current_task
         }
+   
+    def smart_classify(self, email):
+        email = email.lower()
+
+        if "refund" in email or "money back" in email or "return" in email:
+            return "refund"
+
+        if "help" in email or "issue" in email or "problem" in email:
+            return "support"
+
+        if "angry" in email or "frustrating" in email:
+            return "support"
+
+        return "ignore"
