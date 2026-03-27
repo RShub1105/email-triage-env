@@ -1,0 +1,29 @@
+name: email-triage-env
+description: AI environment for email classification and triaging tasks
+version: 1.0.0
+
+entrypoint: email_env.server.app:app
+
+tasks:
+  - id: easy
+    description: Simple email classification
+  - id: medium
+    description: Mixed intent emails
+  - id: hard
+    description: Ambiguous or emotional emails
+
+actions:
+  type: object
+  properties:
+    action:
+      type: string
+      enum: ["refund", "support", "ignore"]
+
+observations:
+  type: object
+  properties:
+    email_text:
+      type: string
+
+reward:
+  type: float
