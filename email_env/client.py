@@ -46,13 +46,20 @@ class EmailEnv:
         return {"email_text": self.current_email}, reward, done, {}
 
     # ✅ GRADER
-    def grade(self, predicted):
-        if predicted == self.correct_action:
+    def grader(self, action):
+        correct = self.correct_action
+
+        if action == correct:
             return 1.0
-        elif predicted in ["refund", "support"]:
+
+        # partial credit
+        if correct == "refund" and action == "support":
             return 0.5
-        else:
-            return 0.0
+
+        if correct == "support" and action == "ignore":
+            return 0.2
+
+        return 0.0
 
     def state(self):
         return {

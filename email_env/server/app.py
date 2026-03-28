@@ -46,7 +46,15 @@ def step(action: dict):
 
 @app.post("/grader")
 def grader(action: dict):
-    score = env.grade(action["action"])
+    if hasattr(env, 'step') and callable(getattr(env, 'step')):
+        result = env.step(action)
+        if isinstance(result, tuple) and len(result) == 4:
+            obs, reward, done, info = result
+            score = reward
+        else:
+            score = 0
+    else:
+        score = 0
     return {"score": score}
 
 @app.get("/baseline")
@@ -62,7 +70,12 @@ def baseline():
         else:
             action = "support"
 
-        score = env.grade(action)
+        result = env.step(action)
+        if isinstance(result, tuple) and len(result) == 4:
+            obs, reward, done, info = result
+            score = reward
+        else:
+            score = 0
         scores.append(score)
 
     return {
