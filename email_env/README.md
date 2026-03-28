@@ -180,6 +180,13 @@ Deployed on Hugging Face Spaces using Docker.
 
 ---
 
+## Baseline Inference
+
+Run the baseline agent:
+
+```bash
+python baseline.py
+
 ## 💡 Future Improvements
 
 * Add multi-step conversations
