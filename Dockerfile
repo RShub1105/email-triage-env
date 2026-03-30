@@ -6,4 +6,4 @@ COPY . .
 
 RUN pip install fastapi uvicorn
 
-CMD ["uvicorn", "email_env.server.app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]

@@ -2,8 +2,9 @@
 title: Email Triage Env
 emoji: 📧
 colorFrom: blue
-colorTo: purple
+colorTo: green
 sdk: docker
-app_file: server/app.py
-pinned: false
+app_port: 7860
 ---
+
+# Email Triage Environment
