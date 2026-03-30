@@ -94,3 +94,7 @@ def baseline():
 @app.get("/state")
 def state():
     return env.state()
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
