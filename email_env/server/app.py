@@ -82,7 +82,6 @@ def baseline():
         else:
             action = "support"
 
-        # ✅ FIX: correct format
         obs, reward, done, info = env.step({"action": action})
 
         score = env.grader(action)
