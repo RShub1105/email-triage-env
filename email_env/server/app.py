@@ -72,8 +72,10 @@ def baseline():
     for task in ["easy", "medium", "hard"]:
         obs = env.reset(task)
 
-    
-        email = obs.get("email_text", "").lower()
+        if not obs or "email_text" not in obs:
+            return {"error": "Invalid observation from reset"}
+
+        email = obs["email_text"].lower()
 
         # agent logic
         if "refund" in email:
@@ -81,15 +83,13 @@ def baseline():
         elif "help" in email or "issue" in email:
             action = "support"
         else:
-            action = "support"
+            action = "ignore"
 
-        
         try:
             obs, reward, done, info = env.step({"action": action})
         except Exception as e:
             return {"error": f"Step failed: {str(e)}"}
 
-    
         try:
             score = env.grader(action)
         except Exception as e:
