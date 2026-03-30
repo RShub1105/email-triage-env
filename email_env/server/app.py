@@ -3,7 +3,6 @@ from email_env.client import EmailEnv
 
 app = FastAPI()
 
-env = EmailEnv()
 
 
 @app.get("/")
@@ -65,7 +64,6 @@ def step(action: dict):
     }
 
 @app.post("/grader")
-@app.post("/grader")
 def grader(action: dict):
     env = EmailEnv()
     try:
@@ -81,50 +79,38 @@ def baseline():
 
     for task in ["easy", "medium", "hard"]:
         try:
-            local_env = EmailEnv()
+            env = EmailEnv()
+            obs = env.reset(task)
 
-            obs = local_env.reset(task)
+            email = str(obs.get("email_text", "")).lower()
 
-            if not isinstance(obs, dict) or "email_text" not in obs:
-                return {"error": f"Invalid observation for {task}"}
-
-            email = str(obs["email_text"]).lower()
-
-            # agent logic
+            # simple agent
             if "refund" in email:
                 action = "refund"
-            elif any(k in email for k in ["help", "issue", "problem"]):
-                action = "support"
-            elif any(k in email for k in ["frustrating", "angry"]):
+            elif any(k in email for k in ["help", "issue", "problem", "angry"]):
                 action = "support"
             else:
                 action = "ignore"
 
-            # step safely
-            step_result = local_env.step({"action": action})
+            result = env.step({"action": action})
 
-            if not isinstance(step_result, tuple) or len(step_result) != 4:
-                scores.append(0.0)
-                continue
-
-            _, reward, _, _ = step_result
-
-            # grader safely
-            try:
-                score = float(local_env.grader(action))
-            except:
+            if isinstance(result, tuple) and len(result) == 4:
+                score = float(env.grader(action))
+            else:
                 score = 0.0
 
             scores.append(score)
 
         except Exception as e:
-            print(f"Baseline error on {task}: {e}")  # logs only
+            print("Baseline crash:", e)
             scores.append(0.0)
 
     return {
-        "baseline_score": float(sum(scores) / len(scores)) if scores else 0.0,
-        "task_scores": [float(s) for s in scores]
+        "baseline_score": sum(scores) / len(scores),
+        "task_scores": scores
     }
+
+
 @app.get("/state")
 def state():
     env = EmailEnv()
@@ -132,6 +118,7 @@ def state():
         return env.state()
     except:
         return {"state": "unknown"}
+
 
 @app.get("/health")
 def health():
