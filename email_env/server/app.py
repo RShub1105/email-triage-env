@@ -36,6 +36,7 @@ def get_tasks():
 # RESET
 @app.post("/reset")
 def reset(task: str = "easy"):
+    env = EmailEnv()
     obs = env.reset(task)
     return {"observation": obs}
 
@@ -45,14 +46,17 @@ def reset(task: str = "easy"):
 # STEP
 @app.post("/step")
 def step(action: dict):
-    if hasattr(env, 'step') and callable(getattr(env, 'step')):
+    env = EmailEnv()
+
+    try:
         result = env.step(action)
         if isinstance(result, tuple) and len(result) == 4:
             obs, reward, done, info = result
         else:
             obs, reward, done, info = result, 0, False, {}
-    else:
-        obs, reward, done, info = {}, 0, False, {"error": "step method not available"}
+    except Exception as e:
+        return {"error": str(e)}
+
     return {
         "observation": obs,
         "reward": reward,
@@ -61,9 +65,15 @@ def step(action: dict):
     }
 
 @app.post("/grader")
+@app.post("/grader")
 def grader(action: dict):
-    score = env.grader(action["action"])
-    return {"score": score}
+    env = EmailEnv()
+    try:
+        score = env.grader(action["action"])
+    except Exception:
+        score = 0.0
+    return {"score": float(score)}
+
 
 @app.get("/baseline")
 def baseline():
@@ -115,10 +125,13 @@ def baseline():
         "baseline_score": float(sum(scores) / len(scores)) if scores else 0.0,
         "task_scores": [float(s) for s in scores]
     }
-
 @app.get("/state")
 def state():
-    return env.state()
+    env = EmailEnv()
+    try:
+        return env.state()
+    except:
+        return {"state": "unknown"}
 
 @app.get("/health")
 def health():
