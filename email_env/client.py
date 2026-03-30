@@ -22,11 +22,9 @@ class EmailEnv:
     ],
 
     "hard": [
-        ("This is extremely frustrating, I’ve emailed 3 times already!", "support"),
-        ("I am disappointed and may cancel my subscription", "support"),
-        ("I don’t think this service is worth it anymore", "support"),
-        ("I might stop using this if not fixed soon", "support"),
-        ("I was expecting better service for what I paid", "support"),
+        ("I've been charged twice but also can't login anymore", "refund"),
+        ("This service is terrible, I want to cancel everything", "refund"),
+        ("I'm not sure what's wrong but nothing works properly", "support"),
     ]
 }
 
@@ -46,10 +44,12 @@ class EmailEnv:
 
         if predicted == self.correct_action:
             reward = 1.0
+
         elif predicted in ["refund", "support"]:
-            reward = 0.5
+            reward = 0.3
+
         else:
-            reward = -1.0
+            reward = -0.5
 
         done = True
 
