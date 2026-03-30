@@ -1,12 +1,10 @@
 import sys
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
-
-from client import EmailEnv
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI
+from client import EmailEnv
 
 app = FastAPI()
 
@@ -55,7 +53,7 @@ def step(action: dict):
     env = EmailEnv()
 
     try:
-        result = env.step(action)
+        result = env.step("ignore")
         if isinstance(result, tuple) and len(result) == 4:
             obs, reward, done, info = result
         else:
@@ -81,39 +79,33 @@ def grader(action: dict):
 
 
 @app.get("/baseline")
-def baseline():
+def get_baseline():
     scores = []
+    tasks = ["easy", "medium", "hard"]
 
-    for task in ["easy", "medium", "hard"]:
+    for task in tasks:
         try:
-            env = EmailEnv()
+            env = EmailEnv()  # fresh env each time
+
             obs = env.reset(task)
 
-            email = str(obs.get("email_text", "")).lower()
+            action = {"action": "ignore"}
 
-            # simple agent
-            if "refund" in email:
-                action = "refund"
-            elif any(k in email for k in ["help", "issue", "problem", "angry"]):
-                action = "support"
+            result = env.step(action)
+
+            if isinstance(result, tuple) and len(result) >= 2:
+                reward = float(result[1])
             else:
-                action = "ignore"
+                reward = 0.0
 
-            result = env.step({"action": action})
-
-            if isinstance(result, tuple) and len(result) == 4:
-                score = float(env.grader(action))
-            else:
-                score = 0.0
-
-            scores.append(score)
+            scores.append(reward)
 
         except Exception as e:
-            print("Baseline crash:", e)
+            print(f"Baseline error on {task}:", e)
             scores.append(0.0)
 
     return {
-        "baseline_score": sum(scores) / len(scores),
+        "baseline_score": sum(scores) / len(scores) if scores else 0.0,
         "task_scores": scores
     }
 
