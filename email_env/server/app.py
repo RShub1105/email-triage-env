@@ -1,9 +1,12 @@
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
+
+from client import EmailEnv
+
 from fastapi import FastAPI
-from client import EmailEnv 
 
 app = FastAPI()
 
