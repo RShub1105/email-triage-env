@@ -72,24 +72,33 @@ def baseline():
     for task in ["easy", "medium", "hard"]:
         obs = env.reset(task)
 
-        email = obs["email_text"]
+    
+        email = obs.get("email_text", "").lower()
 
-        # simple rule-based agent
-        if "refund" in email.lower():
+        # agent logic
+        if "refund" in email:
             action = "refund"
-        elif "help" in email.lower() or "issue" in email.lower():
+        elif "help" in email or "issue" in email:
             action = "support"
         else:
             action = "support"
 
-        obs, reward, done, info = env.step({"action": action})
+        
+        try:
+            obs, reward, done, info = env.step({"action": action})
+        except Exception as e:
+            return {"error": f"Step failed: {str(e)}"}
 
-        score = env.grader(action)
+    
+        try:
+            score = env.grader(action)
+        except Exception as e:
+            return {"error": f"Grader failed: {str(e)}"}
 
         scores.append(score)
 
     return {
-        "baseline_score": sum(scores) / len(scores),
+        "baseline_score": sum(scores) / len(scores) if scores else 0,
         "task_scores": scores
     }
 
