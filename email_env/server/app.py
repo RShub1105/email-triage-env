@@ -70,32 +70,39 @@ def baseline():
     scores = []
 
     for task in ["easy", "medium", "hard"]:
-        obs = env.reset(task)
-
-        if not obs or "email_text" not in obs:
-            return {"error": "Invalid observation from reset"}
-
-        email = obs["email_text"].lower()
-
-        # agent logic
-        if "refund" in email:
-            action = "refund"
-        elif "help" in email or "issue" in email:
-            action = "support"
-        else:
-            action = "ignore"
-
         try:
-            obs, reward, done, info = env.step({"action": action})
-        except Exception as e:
-            return {"error": f"Step failed: {str(e)}"}
+            obs = env.reset(task)
 
-        try:
+            if not isinstance(obs, dict) or "email_text" not in obs:
+                return {"error": f"Invalid observation for task {task}"}
+
+            email = obs["email_text"].lower()
+
+            # agent logic
+            if "refund" in email:
+                action = "refund"
+            elif "help" in email or "issue" in email or "problem" in email:
+                action = "support"
+            elif "frustrating" in email or "angry" in email:
+                action = "support"
+            else:
+                action = "ignore"
+
+            # step
+            step_result = env.step({"action": action})
+
+            if not isinstance(step_result, tuple) or len(step_result) != 4:
+                return {"error": f"Invalid step result for task {task}"}
+
+            obs, reward, done, info = step_result
+
+            # grader
             score = env.grader(action)
-        except Exception as e:
-            return {"error": f"Grader failed: {str(e)}"}
 
-        scores.append(score)
+            scores.append(score)
+
+        except Exception as e:
+            return {"error": f"Baseline failed on {task}: {str(e)}"}
 
     return {
         "baseline_score": sum(scores) / len(scores) if scores else 0,
