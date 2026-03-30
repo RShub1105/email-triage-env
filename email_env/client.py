@@ -4,20 +4,31 @@ class EmailEnv:
 
     def __init__(self):
         self.tasks = {
-            "easy": [
-                 ("I want a refund for my order #1234", "refund"),
-                 ("Can you help me reset my password?", "support"),
-            ],
-            "medium": [
-                ("I want a refund but also need help logging in", "refund"),
-                ("My product arrived damaged and I need assistance", "support"),
-            ],
-            "hard": [
-                ("This is extremely frustrating, I’ve emailed 3 times already!", "support"),
-                ("I am disappointed and may cancel my subscription", "support"),
+    "easy": [
+        ("I want a refund for my order #1234", "refund"),
+        ("Please return my money", "refund"),
+        ("I need a refund for a wrong item", "refund"),
 
-            ]
-        }
+        ("Can you help me reset my password?", "support"),
+        ("I cannot login to my account", "support"),
+        ("Need help accessing my account", "support"),
+    ],
+
+    "medium": [
+        ("I want a refund but also need help logging in", "refund"),
+        ("My product arrived damaged and I need assistance", "support"),
+        ("I was charged twice, please help", "refund"),
+        ("I need support and maybe a refund", "support"),
+    ],
+
+    "hard": [
+        ("This is extremely frustrating, I’ve emailed 3 times already!", "support"),
+        ("I am disappointed and may cancel my subscription", "support"),
+        ("I don’t think this service is worth it anymore", "support"),
+        ("I might stop using this if not fixed soon", "support"),
+        ("I was expecting better service for what I paid", "support"),
+    ]
+}
 
         self.current_email = None
         self.correct_action = None
@@ -29,7 +40,6 @@ class EmailEnv:
 
         return {"email_text": self.current_email}
 
-    # ✅ THIS WAS MISSING OR BROKEN
     def step(self, action):
 
         predicted = action["action"]

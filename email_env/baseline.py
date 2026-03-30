@@ -1,7 +1,11 @@
 import requests
 import os
+import random
 
-BASE_URL = "https://rshuge-email-triage-env.hf.space"  # replace if needed
+random.seed(42)
+
+
+BASE_URL = "https://rshuge-email-triage-env.hf.space"  
 
 def smart_agent(email):
     email = email.lower()

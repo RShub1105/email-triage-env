@@ -13,8 +13,24 @@ def home():
 @app.get("/tasks")
 def get_tasks():
     return {
-        "tasks": ["easy", "medium", "hard"],
-        "actions": ["refund", "support", "ignore"]
+        "tasks": [
+            {
+                "name": "easy",
+                "description": "Clear intent emails (explicit refund or support requests)"
+            },
+            {
+                "name": "medium",
+                "description": "Emails with multiple intents (refund + support mixed)"
+            },
+            {
+                "name": "hard",
+                "description": "Ambiguous or emotional emails where intent is unclear"
+            }
+        ],
+        "action_schema": {
+            "type": "string",
+            "enum": ["refund", "support", "ignore"]
+        }
     }
 
 # RESET
@@ -62,7 +78,7 @@ def baseline():
         else:
             action = "support"
 
-        result = env.step(action)
+        result = env.step({"action": action})
         if isinstance(result, tuple) and len(result) == 4:
             obs, reward, done, info = result
             score = reward
