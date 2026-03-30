@@ -71,10 +71,13 @@ def baseline():
 
     for task in ["easy", "medium", "hard"]:
         try:
-            obs = env.reset(task)
+            # ✅ create fresh env each time
+            local_env = EmailEnv()
+
+            obs = local_env.reset(task)
 
             if not isinstance(obs, dict) or "email_text" not in obs:
-                return {"error": f"Invalid observation for task {task}"}
+                return {"error": f"Invalid observation for {task}"}
 
             email = obs["email_text"].lower()
 
@@ -89,15 +92,15 @@ def baseline():
                 action = "ignore"
 
             # step
-            step_result = env.step({"action": action})
+            result = local_env.step({"action": action})
 
-            if not isinstance(step_result, tuple) or len(step_result) != 4:
-                return {"error": f"Invalid step result for task {task}"}
+            if not isinstance(result, tuple) or len(result) != 4:
+                return {"error": f"Invalid step result for {task}"}
 
-            obs, reward, done, info = step_result
+            obs, reward, done, info = result
 
             # grader
-            score = env.grader(action)
+            score = local_env.grader(action)
 
             scores.append(score)
 
