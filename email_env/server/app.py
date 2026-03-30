@@ -71,7 +71,6 @@ def baseline():
 
     for task in ["easy", "medium", "hard"]:
         try:
-            # ✅ create fresh env each time
             local_env = EmailEnv()
 
             obs = local_env.reset(task)
@@ -79,37 +78,42 @@ def baseline():
             if not isinstance(obs, dict) or "email_text" not in obs:
                 return {"error": f"Invalid observation for {task}"}
 
-            email = obs["email_text"].lower()
+            email = str(obs["email_text"]).lower()
 
             # agent logic
             if "refund" in email:
                 action = "refund"
-            elif "help" in email or "issue" in email or "problem" in email:
+            elif any(k in email for k in ["help", "issue", "problem"]):
                 action = "support"
-            elif "frustrating" in email or "angry" in email:
+            elif any(k in email for k in ["frustrating", "angry"]):
                 action = "support"
             else:
                 action = "ignore"
 
-            # step
-            result = local_env.step({"action": action})
+            # step safely
+            step_result = local_env.step({"action": action})
 
-            if not isinstance(result, tuple) or len(result) != 4:
-                return {"error": f"Invalid step result for {task}"}
+            if not isinstance(step_result, tuple) or len(step_result) != 4:
+                scores.append(0.0)
+                continue
 
-            obs, reward, done, info = result
+            _, reward, _, _ = step_result
 
-            # grader
-            score = local_env.grader(action)
+            # grader safely
+            try:
+                score = float(local_env.grader(action))
+            except:
+                score = 0.0
 
             scores.append(score)
 
         except Exception as e:
-            return {"error": f"Baseline failed on {task}: {str(e)}"}
+            print(f"Baseline error on {task}: {e}")  # logs only
+            scores.append(0.0)
 
     return {
-        "baseline_score": sum(scores) / len(scores) if scores else 0,
-        "task_scores": scores
+        "baseline_score": float(sum(scores) / len(scores)) if scores else 0.0,
+        "task_scores": [float(s) for s in scores]
     }
 
 @app.get("/state")
