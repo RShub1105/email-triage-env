@@ -53,7 +53,8 @@ def step(action: dict):
     env = EmailEnv()
 
     try:
-        result = env.step("ignore")
+        act = action.get("action", action)
+        result = env.step(act)
         if isinstance(result, tuple) and len(result) == 4:
             obs, reward, done, info = result
         else:
@@ -77,19 +78,18 @@ def grader(action: dict):
         score = 0.0
     return {"score": float(score)}
 
-
 @app.get("/baseline")
 def get_baseline():
-    scores = []
     tasks = ["easy", "medium", "hard"]
+    scores = []
 
     for task in tasks:
         try:
-            env = EmailEnv()  # fresh env each time
-
+            env = EmailEnv()
             obs = env.reset(task)
 
-            action = {"action": "ignore"}
+            # IMPORTANT FIX 👇
+            action = "ignore"   # NOT dict
 
             result = env.step(action)
 
@@ -105,7 +105,7 @@ def get_baseline():
             scores.append(0.0)
 
     return {
-        "baseline_score": sum(scores) / len(scores) if scores else 0.0,
+        "baseline_score": sum(scores) / len(scores),
         "task_scores": scores
     }
 
