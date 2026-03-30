@@ -19,7 +19,6 @@ def smart_agent(email):
     if "frustrating" in email or "angry" in email:
         return "support"
 
-    return "ignore"
 
 
 def run_task(task):
