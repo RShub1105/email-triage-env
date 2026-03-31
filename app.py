@@ -1,123 +1,48 @@
-import sys
 import os
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from client import EmailEnv
+from models import EmailAction
 
 app = FastAPI()
-
-
+# Global instance for the hackathon (simplest way to maintain state for single-agent eval)
+env_instance = EmailEnv()
 
 @app.get("/")
 def home():
     return {"message": "Email Env Running 🚀"}
 
-@app.get("/tasks")
-def get_tasks():
-    return {
-        "tasks": [
-            {
-                "name": "easy",
-                "description": "Clear intent emails (explicit refund or support requests)"
-            },
-            {
-                "name": "medium",
-                "description": "Emails with multiple intents (refund + support mixed)"
-            },
-            {
-                "name": "hard",
-                "description": "Ambiguous or emotional emails where intent is unclear"
-            }
-        ],
-        "action_schema": {
-            "type": "string",
-            "enum": ["refund", "support", "ignore"]
-        }
-    }
-
-# RESET
 @app.post("/reset")
 def reset(task: str = "easy"):
-    env = EmailEnv()
-    obs = env.reset(task)
+    obs = env_instance.reset(task)
     return {"observation": obs}
 
-
-
-
-# STEP
 @app.post("/step")
 def step(action: dict):
-    env = EmailEnv()
-
+    # Standardize input: handle {"action": "val"} or just "val"
+    act_val = action.get("action", action)
+    if isinstance(act_val, dict):
+        act_val = act_val.get("action")
+        
     try:
-        act = action.get("action", action)
-        result = env.step(act)
-        if isinstance(result, tuple) and len(result) == 4:
-            obs, reward, done, info = result
-        else:
-            obs, reward, done, info = result, 0, False, {}
+        obs, reward, done, info = env_instance.step({"action": act_val})
+        return {
+            "observation": obs,
+            "reward": float(reward),
+            "done": bool(done),
+            "info": info
+        }
     except Exception as e:
-        return {"error": str(e)}
-
-    return {
-        "observation": obs,
-        "reward": reward,
-        "done": done,
-        "info": info
-    }
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/grader")
 def grader(action: dict):
-    env = EmailEnv()
-    try:
-        score = env.grader(action["action"])
-    except Exception:
-        score = 0.0
+    act_val = action.get("action", action)
+    score = env_instance.grader(act_val)
     return {"score": float(score)}
-
-@app.get("/baseline")
-def get_baseline():
-    tasks = ["easy", "medium", "hard"]
-    scores = []
-
-    for task in tasks:
-        try:
-            env = EmailEnv()
-            obs = env.reset(task)
-
-            # IMPORTANT FIX 👇
-            action = "ignore"   # NOT dict
-
-            result = env.step(action)
-
-            if isinstance(result, tuple) and len(result) >= 2:
-                reward = float(result[1])
-            else:
-                reward = 0.0
-
-            scores.append(reward)
-
-        except Exception as e:
-            print(f"Baseline error on {task}:", e)
-            scores.append(0.0)
-
-    return {
-        "baseline_score": sum(scores) / len(scores),
-        "task_scores": scores
-    }
-
 
 @app.get("/state")
 def state():
-    env = EmailEnv()
-    try:
-        return env.state()
-    except:
-        return {"state": "unknown"}
-
+    return env_instance.state()
 
 @app.get("/health")
 def health():
