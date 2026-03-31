@@ -18,6 +18,8 @@ def smart_agent(email):
 
     if "frustrating" in email or "angry" in email:
         return "support"
+    else:
+        return "ignore" 
 
 
 

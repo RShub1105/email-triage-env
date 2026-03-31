@@ -1,4 +1,5 @@
 import random
+from .models import EmailAction, EmailObservation
 
 class EmailEnv:
 

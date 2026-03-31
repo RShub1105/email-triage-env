@@ -1,8 +1,17 @@
-from fastapi import FastAPI, HTTPException
-from email_env.client import EmailEnv
+import os
+import sys
+sys.path.insert(0, '/Users/rahulsharma/Desktop/Email_env')
+
+try:
+    from fastapi import FastAPI, HTTPException
+    from email_env.client import EmailEnv
+    from email_env.models import EmailAction
+except ImportError as e:
+    print(f"Import error: {e}")
+    raise
 
 app = FastAPI()
-
+# Global instance for the hackathon (simplest way to maintain state for single-agent eval)
 env_instance = EmailEnv()
 
 @app.get("/")
@@ -16,7 +25,11 @@ def reset(task: str = "easy"):
 
 @app.post("/step")
 def step(action: dict):
+    # Standardize input: handle {"action": "val"} or just "val"
     act_val = action.get("action", action)
+    if isinstance(act_val, dict):
+        act_val = act_val.get("action")
+        
     try:
         obs, reward, done, info = env_instance.step({"action": act_val})
         return {
@@ -40,21 +53,17 @@ def baseline():
         # simple agent
         if "refund" in email:
             action = "refund"
-        elif any(k in email for k in ["help", "issue", "problem", "angry", "frustrating"]):
+        elif any(k in email for k in ["help", "issue", "problem", "angry"]):
             action = "support"
         else:
             action = "ignore"
 
-        try:
-            obs, reward, done, info = env_instance.step({"action": action})
-            score = env_instance.grader(action)
-        except Exception as e:
-            score = 0.0
-
+        obs, reward, done, info = env_instance.step({"action": action})
+        score = env_instance.grader(action)
         scores.append(score)
 
     return {
-        "baseline_score": sum(scores) / len(scores),
+        "baseline_score": sum(scores)/len(scores),
         "task_scores": scores
     }
 
