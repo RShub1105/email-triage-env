@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip install -r requirements.txt
+RUN pip install fastapi uvicorn
 
 CMD ["uvicorn", "email_env.app:app", "--host", "0.0.0.0", "--port", "7860"]
