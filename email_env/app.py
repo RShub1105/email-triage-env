@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI, HTTPException
-from client import EmailEnv
-from models import EmailAction
+from .client import EmailEnv
+from .models import EmailAction
 
 app = FastAPI()
 # Global instance for the hackathon (simplest way to maintain state for single-agent eval)
@@ -33,6 +33,32 @@ def step(action: dict):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/baseline")
+def baseline():
+    scores = []
+    tasks = ["easy", "medium", "hard"]
+
+    for task in tasks:
+        obs = env_instance.reset(task)
+        email = obs["email_text"].lower()
+
+        # simple agent
+        if "refund" in email:
+            action = "refund"
+        elif any(k in email for k in ["help", "issue", "problem", "angry"]):
+            action = "support"
+        else:
+            action = "ignore"
+
+        obs, reward, done, info = env_instance.step({"action": action})
+        score = env_instance.grader(action)
+        scores.append(score)
+
+    return {
+        "baseline_score": sum(scores)/len(scores),
+        "task_scores": scores
+    }
 
 @app.post("/grader")
 def grader(action: dict):

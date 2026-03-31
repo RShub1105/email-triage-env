@@ -9,8 +9,5 @@
 from .client import EmailEnv
 from .models import EmailAction, EmailObservation
 
-__all__ = [
-    "EmailAction",
-    "EmailObservation",
-    "EmailEnv",
-]
+__all__ = ["EmailEnv", "EmailAction", "EmailObservation"]
+
