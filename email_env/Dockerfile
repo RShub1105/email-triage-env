@@ -1,9 +1,5 @@
-FROM python:3.10
-
+FROM python:3.9-slim
 WORKDIR /app
-
 COPY . .
-
-RUN pip install fastapi uvicorn pydantic
-
-CMD ["uvicorn", "email_env.app:app", "--host", "0.0.0.0", "--port", "7860"]
+RUN pip install fastapi uvicorn
+CMD ["uvicorn", "email_env.server.app:app", "--host", "0.0.0.0", "--port", "7860"]

@@ -1,15 +1,10 @@
-import os
 import sys
-sys.path.insert(0, '/Users/rahulsharma/Desktop/Email_env')
+from pathlib import Path
 
-try:
-    from fastapi import FastAPI, HTTPException
-    from email_env.client import EmailEnv
-    from email_env.models import EmailAction
-except ImportError as e:
-    print(f"Import error: {e}")
-    raise
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+from email_env.server.client import EmailEnv           
+from fastapi import FastAPI, HTTPException
 app = FastAPI()
 # Global instance for the hackathon (simplest way to maintain state for single-agent eval)
 env_instance = EmailEnv()
