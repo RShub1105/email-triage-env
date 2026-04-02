@@ -1,5 +1,7 @@
 name: email-triage-env
 
+entrypoint: email_env.server.app:main
+
 endpoints:
   reset: /reset
   step: /step
