@@ -1,0 +1,6 @@
+name: email-triage-env
+
+endpoints:
+  reset: /reset
+  step: /step
+  grader: /grader
