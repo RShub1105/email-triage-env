@@ -78,7 +78,7 @@ def health():
 
 def main():
     import uvicorn
-    uvicorn.run("email_env.server.app:app", host="0.0.0.0", port=7860)
+    uvicorn.run(app, host="0.0.0.0", port=7860)
 
 
 if __name__ == "__main__":
