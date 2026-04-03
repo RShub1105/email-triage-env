@@ -30,28 +30,38 @@ def get_agent_action(email_text):
     return content.strip().lower() if content else ""
 
 def main():
+    print("START")
+
     tasks = ["easy", "medium", "hard"]
     total_score = 0
 
     for task in tasks:
+        print(f"STEP: Running task = {task}")
+
         # 1. Reset
         res = requests.post(f"{ENV_URL}/reset", params={"task": task}).json()
         email = res["observation"]["email_text"]
 
         # 2. Inference
         action = get_agent_action(email)
-        
+        print(f"STEP: Action predicted = {action}")
+
         # 3. Step
-        step_res = requests.post(f"{ENV_URL}/step", json={"action": action}).json()
-        
+        requests.post(f"{ENV_URL}/step", json={"action": action})
+
         # 4. Grade
         grade_res = requests.post(f"{ENV_URL}/grader", json={"action": action}).json()
         score = grade_res["score"]
-        
-        print(f"Task: {task} | Action: {action} | Score: {score}")
+
+        print(f"STEP: Score = {score}")
+
         total_score += score
 
-    print(f"\nFINAL AVG SCORE: {total_score / len(tasks)}")
+    avg_score = total_score / len(tasks)
+    print(f"STEP: Final Average Score = {avg_score}")
+
+    print("END")
+
 
 if __name__ == "__main__":
     main()
