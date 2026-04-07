@@ -37,4 +37,4 @@ dev = [
 [project.scripts]
 # Server entry point - enables running via: uv run --project . server
 # or: python -m email_env.server.app
-server = "app:app"
+server = "server.app:main" 
