@@ -1,12 +1,11 @@
 # 📧 Email Triage Environment (OpenEnv RL Challenge)
-
-An interactive reinforcement learning environment for **email classification and triage**, built for the OpenEnv Hackathon.
-The agent must classify incoming emails into one of three categories:
-
-* **refund**
-* **support**
-* **ignore**
-
+---
+title: Email Triage Env
+emoji: 📧
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
 ---
 
 ## 🚀 Project Overview
