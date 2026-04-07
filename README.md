@@ -1,11 +1,12 @@
-# 📧 Email Triage Environment (OpenEnv RL Challenge)
 ---
 title: Email Triage Env
 emoji: 📧
 colorFrom: blue
 colorTo: green
 sdk: docker
-app_port: 7860
+sdk_version: "latest"
+app_file: email_env/server/app.py
+pinned: false
 ---
 
 ## 🚀 Project Overview
