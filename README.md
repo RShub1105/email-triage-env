@@ -1,6 +1,6 @@
 ---
 title: Email Triage Env
-emoji: 📧
+emoji: "📧"
 colorFrom: blue
 colorTo: green
 sdk: docker
@@ -9,183 +9,157 @@ app_file: email_env/server/app.py
 pinned: false
 ---
 
-## 🚀 Project Overview
+# Email Triage Environment
 
-This project simulates a real-world customer support system where an AI agent processes emails and decides the correct action. The environment provides:
+`email-triage-env` is a compact OpenEnv benchmark for a real support-operations task: triaging customer emails into the correct queue. The environment models the kind of decisions an ops agent makes every day, where the message content, thread history, customer tier, and SLA pressure all matter.
 
-* Task-based evaluation (`easy`, `medium`, `hard`)
-* Step-by-step interaction (`reset → step → grader`)
-* Scoring mechanism for agent performance
+The environment is intentionally deterministic and lightweight so it can run cleanly inside the hackathon constraints, while still giving reviewers a realistic benchmark instead of a toy classifier.
 
----
+## Why this is a real-world task
 
-## 🧠 How It Works
+Support teams routinely need to decide whether an incoming email should:
 
-1. **Reset Environment**
+- go straight to a refund queue,
+- go to a support/investigation queue, or
+- be ignored because it is outside the support workflow.
 
-   * Initializes a new task and returns an email
+That routing decision affects response time, chargeback risk, queue health, and customer satisfaction. The benchmark reflects those tradeoffs with scenario metadata like `customer_tier`, `order_status`, `thread_history`, and `sla_hours_remaining`.
 
-2. **Agent Inference**
+## Environment API
 
-   * The agent reads the email and predicts an action
+The server exposes the standard hackathon-friendly HTTP surface:
 
-3. **Step Execution**
+- `POST /reset?task=<easy|medium|hard>`
+- `POST /step`
+- `POST /grader`
+- `GET /state`
+- `GET /health`
 
-   * The environment processes the action
+## Observation Space
 
-4. **Grading**
+`/reset` returns an observation object with:
 
-   * Returns a score based on correctness
+- `email_id`: deterministic scenario identifier
+- `subject`: email subject line
+- `sender`: customer or sender address
+- `customer_tier`: `unknown | standard | gold | platinum`
+- `sla_hours_remaining`: remaining SLA time
+- `email_text`: main email content
+- `thread_history`: prior context and policy hints
+- `order_status`: business status for the case
+- `allowed_actions`: valid action strings
+- `task`: current difficulty bucket
 
----
+## Action Space
 
-## 📂 Project Structure
+The action space is intentionally small and typed:
 
-```
-email-triage-env/
-├── server/
-│   ├── app.py          # FastAPI server (OpenEnv endpoints)
-│   ├── client.py       # Environment logic
-│   └── models.py       # Data models
-├── inference.py        # Agent script (LLM-based)
-├── Dockerfile          # Container setup
-├── pyproject.toml      # Project config
-├── requirements.txt    # Dependencies
-├── openenv.yaml        # OpenEnv metadata
-└── README.md
-```
+- `refund`
+- `support`
+- `ignore`
 
----
+The agent should choose the queue that best matches the customer’s primary requested outcome.
 
-## ⚙️ Setup & Installation
+## Task Design
 
-### 1. Clone the repository
+The benchmark includes three difficulty levels with deterministic scenario rotation:
 
-```
-git clone https://github.com/RShub1105/email-triage-env.git
-cd email-triage-env
-```
+- `easy`: direct single-intent emails
+- `medium`: more realistic cases with billing/logistics nuance
+- `hard`: ambiguous or mixed-intent emails where the agent must prioritize correctly
 
----
+Examples of difficult behavior:
 
-### 2. Install dependencies
+- angry customers who need support, not refunds
+- mixed refund + access issues where refund intent should dominate
+- irrelevant business outreach that should stay out of support queues
 
-```
-pip install -r requirements.txt
-```
+## Reward Design
 
----
+The grader returns a deterministic score in `[0.0, 1.0]`.
 
-### 3. Run the server
+- `1.0` for the correct queue
+- partial credit for business-plausible but suboptimal routing
+- `0.0` for clearly wrong handling
 
-```
-python -m server.app
-```
+The step reward is also normalized to `[0.0, 1.0]` and is shaped from:
 
-Server will start at:
+- grader score
+- urgency bonus for correctly handling high-SLA-risk emails
+- small penalty for ignoring emails that clearly need action
 
-```
-http://localhost:7860
-```
+This gives denser learning signal than a purely binary reward.
 
----
+## Baseline Inference
 
-## 🔌 API Endpoints
+The root `inference.py` uses the OpenAI Python client as required by the hackathon and emits stdout in the required:
 
-| Endpoint  | Method | Description         |
-| --------- | ------ | ------------------- |
-| `/reset`  | POST   | Start a new task    |
-| `/step`   | POST   | Take an action      |
-| `/grader` | POST   | Get score           |
-| `/health` | GET    | Check server status |
+- `[START]`
+- `[STEP]`
+- `[END]`
 
----
+format.
 
-## 🤖 Inference (Agent)
+Required environment variables:
 
-The agent uses the **OpenAI client** (via Hugging Face router) to classify emails.
-
-### Required Environment Variables
-
-```
-API_BASE_URL=https://router.huggingface.co/v1
-MODEL_NAME=meta-llama/Llama-3-8b-instruct
-HF_TOKEN=your_token_here
+```bash
+export API_BASE_URL="https://router.huggingface.co/v1"
+export MODEL_NAME="meta-llama/Llama-3-8b-instruct"
+export HF_TOKEN="your_token"
 ```
 
----
+Run the local server:
 
-### Run Inference
-
+```bash
+python -m email_env.server.app
 ```
+
+Run inference:
+
+```bash
 python inference.py
 ```
 
----
+## Local Development
 
-## 🐳 Docker Support
+Install dependencies:
 
-Build and run using Docker:
-
-```
-docker build -t email-env .
-docker run -p 7860:7860 email-env
+```bash
+pip install -r requirements.txt
 ```
 
----
+Run the API:
 
-## 🧪 Example Workflow
-
-```
-POST /reset → get email
-POST /step → send action
-POST /grader → receive score
+```bash
+python -m email_env.server.app
 ```
 
----
+Health check:
 
-## 📊 Evaluation
+```bash
+curl http://localhost:7860/health
+```
 
-The agent is evaluated across:
+## Docker
 
-* Easy
-* Medium
-* Hard tasks
+Build:
 
-Final score = average across all tasks
+```bash
+docker build -t email-triage-env .
+```
 
----
+Run:
 
-## 🛠 Tech Stack
+```bash
+docker run -p 7860:7860 email-triage-env
+```
 
-* **FastAPI** — API server
-* **OpenAI Python SDK** — LLM inference
-* **Docker** — containerization
-* **OpenEnv** — evaluation framework
+## Submission Notes
 
----
+This project is designed for the OpenEnv Round 1 constraints:
 
-## 📌 Notes
-
-* Designed to run within:
-
-  * 2 vCPU
-  * 8 GB RAM
-* Hugging Face Space must be in **Running** state before submission
-
----
-
-## 🙌 Acknowledgements
-
-Built for the **OpenEnv RL Hackathon**
-Special thanks to the organizers and support team.
-
----
-
-## 📬 Contact
-
-For issues or questions, feel free to reach out or open an issue in the repository.
-
----
-
-⭐ If you found this helpful, consider giving the repo a star!
+- reproducible scenario order
+- deterministic grader
+- 3 difficulty levels
+- normalized reward/score outputs
+- lightweight runtime for `2 vCPU / 8 GB RAM`

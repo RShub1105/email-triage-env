@@ -1,3 +1,33 @@
 name: email-triage-env
-version: "1.0.0"
-description: "Email triage environment"
+version: "2.0.0"
+description: >
+  A deterministic customer-support email triage environment where an agent routes
+  incoming messages into refund, support, or ignore queues using realistic business context.
+entrypoint: email_env.server.app:app
+tasks:
+  - name: easy
+    description: Direct single-intent emails with obvious routing.
+  - name: medium
+    description: Operationally realistic emails with billing, logistics, and off-topic traffic.
+  - name: hard
+    description: Ambiguous or multi-intent emails where the primary customer outcome must be inferred.
+action_space:
+  type: enum
+  values: [refund, support, ignore]
+observation_space:
+  type: object
+  fields:
+    email_id: string
+    subject: string
+    sender: string
+    customer_tier: string
+    sla_hours_remaining: integer
+    email_text: string
+    thread_history: array
+    order_status: string
+    allowed_actions: array
+    task: string
+reward_range: [0.0, 1.0]
+grader:
+  deterministic: true
+  score_range: [0.0, 1.0]
