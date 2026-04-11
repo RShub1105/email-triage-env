@@ -5,15 +5,15 @@ import requests
 from openai import OpenAI
 
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+API_BASE_URL = os.environ["API_BASE_URL"] if "API_BASE_URL" in os.environ else "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3-8b-instruct")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
+API_KEY = os.environ["API_KEY"] if "API_KEY" in os.environ else (os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY"))
 ENV_URL = os.getenv("ENV_URL", "https://rshuge-email-triage-env.hf.space")
 BENCHMARK = os.getenv("BENCHMARK", "email-triage-env")
 MAX_STEPS = 1
 
 if not API_KEY:
-    raise ValueError("HF_TOKEN or OPENAI_API_KEY environment variable is required")
+    raise ValueError("API_KEY environment variable is required for hackathon validation")
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
@@ -53,34 +53,32 @@ def build_prompt(observation: dict) -> str:
     )
 
 
-def get_agent_action(email_text):
-    if not email_text:
+def get_agent_action(observation: dict) -> str:
+    if not observation:
         return "ignore"
 
-    email = email_text.lower()
-
-    # 🔥 HIGH PRIORITY → REFUND (even if mixed intent)
-    refund_keywords = [
-        "refund", "money back", "return my payment",
-        "charged twice", "duplicate charge", "cancel order",
-        "cancel everything", "damaged", "broken", "not delivered"
-    ]
-
-    if any(k in email for k in refund_keywords):
-        return "refund"
-
-    # 🟡 SUPPORT (only if no refund intent)
-    support_keywords = [
-        "help", "issue", "problem", "login",
-        "cannot log in", "can't log in",
-        "reset password", "access"
-    ]
-
-    if any(k in email for k in support_keywords):
-        return "support"
-
-    # ❄️ fallback
-    return "ignore"
+    prompt = build_prompt(observation)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an email triage agent. "
+                        "Respond with exactly one lowercase word: refund, support, or ignore."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0,
+            max_tokens=8,
+            timeout=30,
+        )
+        prediction = (response.choices[0].message.content or "").strip().lower()
+        return prediction if prediction in {"refund", "support", "ignore"} else "ignore"
+    except Exception:
+        return "ignore"
 
 
 def run_task(task: str) -> tuple[bool, int, float, list[float]]:
@@ -94,7 +92,7 @@ def run_task(task: str) -> tuple[bool, int, float, list[float]]:
     response.raise_for_status()
     observation = response.json()["observation"]
 
-    action = get_agent_action(observation.get("email_text", ""))
+    action = get_agent_action(observation)
     step_response = requests.post(f"{ENV_URL}/step", json={"action": action}, timeout=20)
     step_response.raise_for_status()
     step_payload = step_response.json()

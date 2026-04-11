@@ -103,9 +103,9 @@ format.
 Required environment variables:
 
 ```bash
-export API_BASE_URL="https://router.huggingface.co/v1"
+export API_BASE_URL="https://your-validator-proxy/v1"
+export API_KEY="your_validator_key"
 export MODEL_NAME="meta-llama/Llama-3-8b-instruct"
-export HF_TOKEN="your_token"
 ```
 
 Run the local server:
